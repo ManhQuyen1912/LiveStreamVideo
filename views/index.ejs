@@ -12,14 +12,10 @@
         <div>
             <label for="cameraSelect">Select Camera:</label>
             <select id="cameraSelect">
-                <option value="110">MKT</option>
-                <option value="111">SEO</option>
-                <option value="112">VH</option>
-                <option value="113">BA & KT</option>
-                <option value="114">Phòng họp 1</option>
-                <option value="115">DEV</option>
-                <option value="116">Phòng họp 2</option>
-            </select>
+                <% cameras.forEach(camera => { %>
+                    <option value="<%= camera %>"><%= camera %></option>
+                <% }) %>
+            </select>            
         </div>
     </div>
     <div id="video-container">

@@ -1,32 +1,45 @@
 const express = require('express');
+const { proxy, scriptUrl } = require('rtsp-relay')(express()); 
+const expressWs = require('express-ws');
 const app = express();
-const { proxy, scriptUrl } = require('rtsp-relay')(app); // Automatically enables WebSocket
+expressWs(app);
 
-// Endpoint cho mỗi camera dựa trên ID hoặc tên camera
-app.ws('/api/stream/:camera', (ws, req) => {
-  const camera = req.params.camera;
-  
-  // Cấu hình URL RTSP cho từng camera cụ thể
-  const handler = proxy({
-    url: `rtsp://admin:YIHXCD@192.168.110.${camera}:554`, // Giả sử camera được cấu hình bằng IP
-    verbose: false,
-  });
+// Định nghĩa danh sách URL RTSP cho các camera
+const cameras = {
+    "MKT": `rtsp://admin:YIHXCD@192.168.110.114:554/`,
+    "SEO": `rtsp://admin:YIHXCD@192.168.110.116:554/`,
+    "VH": `rtsp://admin:YIHXCD@192.168.110.117:554/`,
+    "DEV": `rtsp://admin:YIHXCD@192.168.110.115:554/`,
+    // Thêm các camera khác vào đây
+};
 
-  // Khởi chạy handler để chuyển luồng RTSP đến WebSocket
-  handler(ws, req);
+// Tạo các handler proxy cho mỗi camera
+const handlers = {};
+Object.keys(cameras).forEach(cameraId => {
+    handlers[cameraId] = proxy({
+        url: cameras[cameraId],
+        verbose: false,
+    });
 });
 
-// Set the view engine to EJS
-app.set('view engine', 'ejs');
+// Route để khởi động luồng video cho từng camera dựa vào ID
+app.ws('/api/stream/:camera', (ws, req) => {
+    const cameraId = req.params.camera;
+    if (handlers[cameraId]) {
+        handlers[cameraId](ws, req);  // Khởi động luồng cho camera tương ứng
+    } else {
+        ws.close();  // Đóng kết nối nếu camera không tồn tại
+    }
+});
 
-// Serve static files from the 'public' directory
+// Cấu hình để render file EJS với danh sách camera
+app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
-// Serve the HTML file using EJS
 app.get('/', (req, res) => {
-  res.render('index', { scriptUrl });
+    res.render('index', { scriptUrl, cameras: Object.keys(cameras) });
 });
 
 app.listen(8000, () => {
-  console.log(`Server is running on port 8000`);
+    console.log(`Server is running on port 8000`);
 });
