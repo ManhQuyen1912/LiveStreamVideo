@@ -1,13 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('startButton').addEventListener('click', () => {
         const selectedCamera = document.getElementById('cameraSelect').value;
-        loadPlayer({
-            // url: 'ws://' + location.host + '/api/stream?camera=' + encodeURIComponent(selectedCamera),
-            url: 'ws://' + location.host + '/api/stream',
-            canvas: document.getElementById('canvas')
-        });
-        console.log("##################")
-        console.log(location.host)
-        console.log("##################")
+
+        if (selectedCamera) {
+            loadPlayer({
+                url: 'ws://' + location.host + '/api/stream/' + selectedCamera,
+                canvas: document.getElementById('canvas')
+            });
+        } else {
+            alert("Vui lòng chọn camera trước khi bắt đầu.");
+        }
     });
 });

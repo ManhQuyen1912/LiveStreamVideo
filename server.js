@@ -2,12 +2,19 @@ const express = require('express');
 const app = express();
 const { proxy, scriptUrl } = require('rtsp-relay')(app); // Automatically enables WebSocket
 
-// Configure RTSP relay handler
-const handler = proxy({
-  url: `rtsp://admin:YIHXCD@192.168.110.115:554`,
-  verbose: false,
+// Endpoint cho mỗi camera dựa trên ID hoặc tên camera
+app.ws('/api/stream/:camera', (ws, req) => {
+  const camera = req.params.camera;
+  
+  // Cấu hình URL RTSP cho từng camera cụ thể
+  const handler = proxy({
+    url: `rtsp://admin:YIHXCD@192.168.110.${camera}:554`, // Giả sử camera được cấu hình bằng IP
+    verbose: false,
+  });
+
+  // Khởi chạy handler để chuyển luồng RTSP đến WebSocket
+  handler(ws, req);
 });
-app.ws('/api/stream', handler);
 
 // Set the view engine to EJS
 app.set('view engine', 'ejs');
@@ -23,13 +30,3 @@ app.get('/', (req, res) => {
 app.listen(8000, () => {
   console.log(`Server is running on port 8000`);
 });
-
-const ffmpeg = require('fluent-ffmpeg');
-
-ffmpeg('rtsp://admin:YIHXCD@192.168.110.115:554')
-  .outputOptions('-f segment', '-segment_time 3', '-reset_timestamps 1')
-  .output('output%d.mp4')
-  .on('end', () => {
-    console.log('Stream capture finished');
-  })
-  .run();
