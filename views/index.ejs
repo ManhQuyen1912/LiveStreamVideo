@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTSP Stream</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="controls">
+        <button id="startButton">Start Viewing</button>
+        <div>
+            <label for="cameraSelect">Select Camera:</label>
+            <select id="cameraSelect">
+                <option value="">MKT</option>
+                <option value="">SEO</option>
+                <option value="">VH</option>
+                <option value="">BA & KT</option>
+                <option value="">Phòng họp 1</option>
+                <option value="">DEV</option>
+                <option value="">Phòng họp 2</option>
+            </select>
+        </div>
+    </div>
+    <div id="video-container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script src="<%= scriptUrl %>"></script>
+    <!-- <script>
+        loadPlayer({
+            url: 'ws://' + location.host + '/api/stream',
+            canvas: document.getElementById('canvas')
+        });
+    </script> -->
+    <script src="js/scripts.js"></script>
+</body>
+</html>
