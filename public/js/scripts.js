@@ -1,14 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+    let wsConnection = null;
+
     document.getElementById('startButton').addEventListener('click', () => {
         const selectedCamera = document.getElementById('cameraSelect').value;
         const canvas = document.getElementById('canvas');
-        const context = canvas.getContext('2d');
-        
-        // Clear the canvas immediately when a new camera is selected
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        // Close existing WebSocket connection if it exists
+        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+            wsConnection.close();
+        }
 
+        // Try to connect to the new WebSocket
         const wsUrl = 'ws://' + location.host + '/api/stream/' + encodeURIComponent(selectedCamera);
-        const wsConnection = new WebSocket(wsUrl);
+        wsConnection = new WebSocket(wsUrl);
 
         wsConnection.onopen = () => {
             loadPlayer({
@@ -18,14 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         wsConnection.onerror = () => {
-            console.error("Không thể kết nối tới camera.");
-            wsConnection.close();  // Đóng kết nối ngay khi gặp lỗi
+            // Display error message or clear canvas
+            console.error("Cannot connect to the camera.");
+            if (canvas && canvas.getContext) {
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
+            wsConnection.close();
         };
 
         wsConnection.onclose = () => {
-            // Đảm bảo canvas trống nếu không có kết nối
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            console.log("Kết nối WebSocket đã đóng.");
+            console.log("WebSocket connection closed.");
+            if (canvas && canvas.getContext) {
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+            }
         };
     });
 });

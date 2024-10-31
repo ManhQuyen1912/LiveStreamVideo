@@ -12,7 +12,7 @@ const cameras = {
     "BAKT": `rtsp://admin:admin@192.168.110.118:554/`,
     "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
     "DEV": `rtsp://admin:YIHXCD@192.168.110.115:554/`,
-    "PH2": `rtsp://admin:admin@192.168.110.120:554/`,
+    "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
     // Thêm các camera khác vào đây
 };
 
@@ -28,9 +28,16 @@ Object.keys(cameras).forEach(cameraId => {
 // Route để khởi động luồng video cho từng camera dựa vào ID
 app.ws('/api/stream/:camera', (ws, req) => {
     const cameraId = req.params.camera;
+
     if (handlers[cameraId]) {
-        handlers[cameraId](ws, req);  // Khởi động luồng cho camera tương ứng
+        try {
+            handlers[cameraId](ws, req); // Bắt đầu luồng camera
+        } catch (error) {
+            console.error(`Không thể kết nối tới camera ${cameraId}:`, error);
+            ws.close();  // Đóng kết nối nếu có lỗi
+        }
     } else {
+        console.log(`Camera ${cameraId} không tồn tại.`);
         ws.close();  // Đóng kết nối nếu camera không tồn tại
     }
 });
