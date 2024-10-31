@@ -6,10 +6,13 @@ expressWs(app);
 
 // Định nghĩa danh sách URL RTSP cho các camera
 const cameras = {
-    "MKT": `rtsp://admin:YIHXCD@192.168.110.114:554/`,
-    "SEO": `rtsp://admin:YIHXCD@192.168.110.116:554/`,
-    "VH": `rtsp://admin:YIHXCD@192.168.110.117:554/`,
+    "KD": `rtsp://admin:admin@192.168.110.114:554/`,
+    "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
+    "VH": `rtsp://admin:admin@192.168.110.117:554/`,
+    "BAKT": `rtsp://admin:admin@192.168.110.118:554/`,
+    "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
     "DEV": `rtsp://admin:YIHXCD@192.168.110.115:554/`,
+    "PH2": `rtsp://admin:admin@192.168.110.120:554/`,
     // Thêm các camera khác vào đây
 };
 
