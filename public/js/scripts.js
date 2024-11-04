@@ -1,53 +1,18 @@
-// document.addEventListener('DOMContentLoaded', () => {
-//     let wsConnection = null;
-
-//     document.getElementById('startButton').addEventListener('click', () => {
-//         const selectedCamera = document.getElementById('cameraSelect').value;
-//         const canvas = document.getElementById('canvas');
-//         // Close existing WebSocket connection if it exists
-//         if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-//             wsConnection.close();
-//         }
-
-//         // Try to connect to the new WebSocket
-//         const wsUrl = 'ws://' + location.host + '/api/stream/' + encodeURIComponent(selectedCamera);
-//         wsConnection = new WebSocket(wsUrl);
-
-//         wsConnection.onopen = () => {
-//             loadPlayer({
-//                 url: wsUrl,
-//                 canvas: canvas
-//             });
-//         };
-
-//         wsConnection.onerror = () => {
-//             // Display error message or clear canvas
-//             console.error("Cannot connect to the camera.");
-//             if (canvas && canvas.getContext) {
-//                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-//             }
-//             wsConnection.close();
-//         };
-
-//         wsConnection.onclose = () => {
-//             console.log("WebSocket connection closed.");
-//             if (canvas && canvas.getContext) {
-//                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-//             }
-//         };
-//     });
-// });
 document.addEventListener('DOMContentLoaded', () => {
-    const canvas = document.getElementById('canvas');
     const wsConnections = {};
+    const captureInterval = 5000;
 
     // Khởi tạo kết nối WebSocket cho tất cả các camera
-    const cameraSelect = document.getElementById('cameraSelect');
-    const cameraOptions = Array.from(cameraSelect.options).map(option => option.value);
+    const cameraOptions = Array.from(document.querySelectorAll('.grid-item canvas')).map(canvas => canvas.id.split('-')[1]);
 
     cameraOptions.forEach(cameraId => {
         const wsUrl = 'ws://' + location.host + '/api/stream/' + encodeURIComponent(cameraId);
         const wsConnection = new WebSocket(wsUrl);
+
+        wsConnection.onmessage = (event) => {
+            console.log(`Data received from camera ${cameraId}`);
+            // Optional: Draw a sample frame to canvas to verify data processing
+        };
 
         wsConnection.onopen = () => {
             console.log(`WebSocket connection opened for camera ${cameraId}`);
@@ -65,16 +30,42 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('startButton').addEventListener('click', () => {
-        const selectedCamera = document.getElementById('cameraSelect').value;
-        const wsConnection = wsConnections[selectedCamera];
+        cameraOptions.forEach(cameraId => {
+            const wsConnection = wsConnections[cameraId];
+            const canvas = document.getElementById(`canvas-${cameraId}`);
 
-        if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-            loadPlayer({
-                url: wsConnection.url,
-                canvas: canvas
-            });
-        } else {
-            console.error(`WebSocket connection for camera ${selectedCamera} is not open.`);
-        }
+            if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                loadPlayer({
+                    url: wsConnection.url,
+                    canvas: canvas
+                });
+                setInterval(() => {
+                    captureImageAndSend(canvas,cameraId);
+                },captureInterval);
+            } else {
+                console.error(`WebSocket connection for camera ${cameraId} is not open.`);
+            }
+        });
     });
+    function captureImageAndSend(canvas, cameraId) {
+        const imageData = canvas.toDataURL('image/jpeg').replace('data:image/png;base64,', '');
+        fetch("http://ecom.draerp.vn/api/method/hrms.hr.doctype.employee_checkin.employee_checkin.checkin_face", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                cameraId: cameraId,
+                image_base64: imageData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(`Image from camera ${cameraId} sent successfully.`, data);
+        })
+        .catch(error => {
+            console.error(`Failed to send image from camera ${cameraId}.`, error);
+        });
+    }
 });
+

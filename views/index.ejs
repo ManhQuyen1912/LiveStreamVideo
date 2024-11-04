@@ -9,26 +9,17 @@
 <body>
     <div id="controls">
         <button id="startButton">Start Viewing</button>
-        <div>
-            <label for="cameraSelect">Select Camera:</label>
-            <select id="cameraSelect">
-                <% cameras.forEach(camera => { %>
-                    <option value="<%= camera %>"><%= camera %></option>
-                <% }) %>
-            </select>            
-        </div>
     </div>
-    <div id="video-container">
-        <canvas id="canvas"></canvas>
+    <div id="video-container" class="grid-container">
+        <% cameras.forEach(camera => { %>
+            <div class="grid-item">
+                <canvas id="canvas-<%= camera %>" width="320" height="240"></canvas>
+                <p><%= camera %></p>
+            </div>
+        <% }) %>
     </div>
 
     <script src="<%= scriptUrl %>"></script>
-    <!-- <script>
-        loadPlayer({
-            url: 'ws://' + location.host + '/api/stream',
-            canvas: document.getElementById('canvas')
-        });
-    </script> -->
     <script src="js/scripts.js"></script>
 </body>
 </html>
