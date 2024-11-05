@@ -1,6 +1,10 @@
 const express = require('express');
 const { proxy, scriptUrl } = require('rtsp-relay')(express()); 
 const expressWs = require('express-ws');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+const path = require('path');
+const cron = require('node-cron');
 const app = express();
 expressWs(app);
 
@@ -23,6 +27,59 @@ Object.keys(cameras).forEach(cameraId => {
         verbose: true,
     });
     console.log(`Handler created for camera: ${cameraId}`);
+});
+
+const recordingProcesses = {};
+const baseRecordingPath = path.join(__dirname, 'new_recordings');
+
+function startRecording(cameraId) {
+    const date = new Date();
+    const dateString = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    const hourString = date.getHours().toString().padStart(2, '0'); // Get HH format
+    const outputPath = path.join(baseRecordingPath, cameraId, dateString, `${hourString}.mp4`);
+
+    if (!fs.existsSync(path.dirname(outputPath))) {
+        fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+    }
+
+    const ffmpegProcess = ffmpeg(cameras[cameraId])
+        .output(outputPath)
+        .outputOptions([
+            '-c copy',
+            '-t 3600',
+            '-movflags +faststart'
+        ])
+        .on('start', () => {
+            console.log(`Recording started for camera ${cameraId}`);
+        })
+        .on('end', () => {
+            console.log(`Recording ended for camera ${cameraId}`);
+        })
+        .on('error', (err) => {
+            console.error(`Recording error for camera ${cameraId}:`, err);
+        })
+        .run();
+
+    recordingProcesses[cameraId] = ffmpegProcess;
+}
+
+function stopRecording(cameraId) {
+    const ffmpegProcess = recordingProcesses[cameraId];
+
+    if (ffmpegProcess) {
+        ffmpegProcess.kill('SIGINT');
+        delete recordingProcesses[cameraId];
+        console.log(`Recording stopped for camera ${cameraId}`);
+    } else {
+        console.log(`No recording process found for camera ${cameraId}`);
+    }
+}
+
+Object.keys(cameras).forEach(cameraId => {
+    cron.schedule('0 * * * *', () => {
+        console.log(`Starting scheduled recording for camera ${cameraId}`);
+        startRecording(cameraId);
+    });
 });
 
 // Route để khởi động luồng video cho từng camera dựa vào ID

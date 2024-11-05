@@ -39,33 +39,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     url: wsConnection.url,
                     canvas: canvas
                 });
-                setInterval(() => {
-                    captureImageAndSend(canvas,cameraId);
-                },captureInterval);
+                // setInterval(() => {
+                //     captureImageAndSend(canvas,cameraId);
+                // },captureInterval);
             } else {
                 console.error(`WebSocket connection for camera ${cameraId} is not open.`);
             }
         });
     });
-    function captureImageAndSend(canvas, cameraId) {
-        const imageData = canvas.toDataURL('image/jpeg').replace('data:image/png;base64,', '');
-        fetch("http://ecom.draerp.vn/api/method/hrms.hr.doctype.employee_checkin.employee_checkin.checkin_face", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                cameraId: cameraId,
-                image_base64: imageData
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log(`Image from camera ${cameraId} sent successfully.`, data);
-        })
-        .catch(error => {
-            console.error(`Failed to send image from camera ${cameraId}.`, error);
-        });
-    }
+    // function captureImageAndSend(canvas, cameraId) {
+    //     const imageData = canvas.toDataURL('image/jpeg').replace('data:image/png;base64,', '');
+    //     fetch("http://ecom.draerp.vn/api/method/hrms.hr.doctype.employee_checkin.employee_checkin.checkin_face", {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({
+    //             cameraId: cameraId,
+    //             image_base64: imageData
+    //         })
+    //     })
+    //     .then(response => response.json())
+    //     .then(data => {
+    //         console.log(`Image from camera ${cameraId} sent successfully.`, data);
+    //     })
+    //     .catch(error => {
+    //         console.error(`Failed to send image from camera ${cameraId}.`, error);
+    //     });
+    // }
 });
-
