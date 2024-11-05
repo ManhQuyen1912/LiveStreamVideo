@@ -1,3 +1,4 @@
+require('dotenv').config;
 const express = require('express');
 const { proxy, scriptUrl } = require('rtsp-relay')(express()); 
 const expressWs = require('express-ws');
@@ -5,15 +6,15 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+// const fetch = require('node-fetch');
 const app = express();
 expressWs(app);
 
-// Định nghĩa danh sách URL RTSP cho các camera
 const cameras = {
     // "KD": `rtsp://admin:admin@192.168.110.114:554/`,
     // "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
     // "VH": `rtsp://admin:admin@192.168.110.117:554/`,
-    "BAKT": `rtsp://admin:PIFUNR@192.168.1.6:554/`,
+    // "BAKT": `rtsp://admin:PIFUNR@192.168.1.6:554/`,
     // "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
     "DEV": `rtsp://admin:YIHXCD@192.168.1.4:554/`,
     // "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
@@ -63,18 +64,6 @@ function startRecording(cameraId) {
     recordingProcesses[cameraId] = ffmpegProcess;
 }
 
-function stopRecording(cameraId) {
-    const ffmpegProcess = recordingProcesses[cameraId];
-
-    if (ffmpegProcess) {
-        ffmpegProcess.kill('SIGINT');
-        delete recordingProcesses[cameraId];
-        console.log(`Recording stopped for camera ${cameraId}`);
-    } else {
-        console.log(`No recording process found for camera ${cameraId}`);
-    }
-}
-
 Object.keys(cameras).forEach(cameraId => {
     cron.schedule('0 * * * *', () => {
         console.log(`Starting scheduled recording for camera ${cameraId}`);
@@ -98,6 +87,31 @@ app.ws('/api/stream/:camera', (ws, req) => {
     } else {
         console.log(`Camera ${cameraId} không tồn tại.`);
         ws.close();  // Đóng kết nối nếu camera không tồn tại
+    }
+});
+
+app.use(express.json())
+app.post('/api/send-image', async (req, res) => {
+    const { cameraId, image_base64 } = req.body;
+    
+    try {
+        const response = await fetch("http://ecom.draerp.vn/api/method/hrms.hr.doctype.employee_checkin.employee_checkin.checkin_face", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${Buffer.from(process.env.API_USERNAME + ":" + process.env.API_PASSWORD).toString('base64')}`
+            },
+            body: JSON.stringify({
+                cameraId,
+                image_base64
+            })
+        });
+        
+        const data = await response.json();
+        res.json(data);
+    } catch (error) {
+        console.error('Error sending image:', error);
+        res.status(500).json({ error: 'Failed to send image' });
     }
 });
 
