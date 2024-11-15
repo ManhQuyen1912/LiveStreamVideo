@@ -6,7 +6,6 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
-// const fetch = require('node-fetch');
 const app = express();
 expressWs(app);
 
@@ -14,9 +13,10 @@ const cameras = {
     // "KD": `rtsp://admin:admin@192.168.110.114:554/`,
     // "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
     // "VH": `rtsp://admin:admin@192.168.110.117:554/`,
-    // "BAKT": `rtsp://admin:PIFUNR@192.168.1.6:554/`,
+    "BAKT": `rtsp://admin:PIFUNR@192.168.1.6:554/`,
     // "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
-    "DEV": `rtsp://admin:YIHXCD@192.168.1.4:554/`,
+    // "DEV": `rtsp://admin:YIHXCD@192.168.1.4:554/`,
+    // "DEV": `rtsp://admin:YIHXCD@192.168.110.117:554/`,
     // "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
 };
 
@@ -32,6 +32,72 @@ Object.keys(cameras).forEach(cameraId => {
 
 const recordingProcesses = {};
 const baseRecordingPath = path.join(__dirname, 'new_recordings');
+
+const fetchWithTimeout = async (url, options, timeout = 5000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        console.error('Fetch request timed out or failed:', error);
+        throw error;
+    }
+};
+
+const captureImage = (cameraId) => {
+    const outputFilePath = path.join(__dirname, `${cameraId}_snapshot.jpg`);
+
+    ffmpeg(cameras[cameraId])
+        .frames(1) // Capture a single frame
+        .output(outputFilePath)
+        .on('end', async () => {
+            console.log(`Captured image for camera ${cameraId}`);
+
+            // Convert the image to base64
+            const imageBuffer = fs.readFileSync(outputFilePath);
+            const imageBase64 = imageBuffer.toString('base64');
+
+            // Send image to API endpoint
+            try {
+                await fetchWithTimeout("http://ecom.draerp.vn/api/method/hrms.hr.doctype.employee_checkin.employee_checkin.checkin_face", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${Buffer.from(process.env.API_USERNAME + ":" + process.env.API_PASSWORD).toString('base64')}`
+                    },
+                    body: JSON.stringify({
+                        cameraId,
+                        image_base64: imageBase64
+                    })
+                });
+                console.log(`Image sent to API for camera ${cameraId}`);
+            } catch (error) {
+                console.error(`Error sending image for camera ${cameraId}:`, error);
+            }
+
+            // Clean up
+            if (fs.existsSync(outputFilePath)) {
+                fs.unlinkSync(outputFilePath);
+            } else {
+                console.warn(`File not found for deletion: ${outputFilePath}`);
+            }
+        })
+        .on('error', (err) => {
+            console.error(`Capture error for camera ${cameraId}:`, err);
+        })
+        .run();
+};
+
+// Schedule the capture every few seconds (adjust as needed)
+Object.keys(cameras).forEach(cameraId => {
+    cron.schedule('*/10 * * * * *', () => { // Captures every 10 seconds
+        console.log(`Capturing image for camera ${cameraId}`);
+        captureImage(cameraId);
+    });
+});
 
 function startRecording(cameraId) {
     const date = new Date();
