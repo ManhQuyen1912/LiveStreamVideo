@@ -10,13 +10,12 @@ const app = express();
 expressWs(app);
 
 const cameras = {
-    // "KD": `rtsp://admin:admin@192.168.110.114:554/`,
+    "KD": `rtsp://admin:DIRWZQ@192.168.129.145:554/`,
     // "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
-    // "VH": `rtsp://admin:admin@192.168.110.117:554/`,
-    "BAKT": `rtsp://admin:PIFUNR@192.168.1.6:554/`,
+    "VH": `rtsp://admin:YQPEFE@192.168.129.124:554/`,
+    "BAKT": `rtsp://admin:PIFUNR@192.168.1.14:5542/`,
     // "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
-    // "DEV": `rtsp://admin:YIHXCD@192.168.1.4:554/`,
-    // "DEV": `rtsp://admin:YIHXCD@192.168.110.117:554/`,
+    "DEV": `rtsp://admin:YIHXCD@192.168.1.14:5547/`,
     // "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
 };
 
@@ -92,12 +91,12 @@ const captureImage = (cameraId) => {
 };
 
 // Schedule the capture every few seconds (adjust as needed)
-Object.keys(cameras).forEach(cameraId => {
-    cron.schedule('*/10 * * * * *', () => { // Captures every 10 seconds
-        console.log(`Capturing image for camera ${cameraId}`);
-        captureImage(cameraId);
-    });
-});
+// Object.keys(cameras).forEach(cameraId => {
+//     cron.schedule('*/10 * * * * *', () => { // Captures every 10 seconds
+//         console.log(`Capturing image for camera ${cameraId}`);
+//         captureImage(cameraId);
+//     });
+// });
 
 function startRecording(cameraId) {
     const date = new Date();
@@ -113,7 +112,7 @@ function startRecording(cameraId) {
         .output(outputPath)
         .outputOptions([
             '-c copy',
-            '-t 3600',
+            '-t 900',
             '-movflags +faststart'
         ])
         .on('start', () => {
@@ -146,6 +145,21 @@ app.ws('/api/stream/:camera', (ws, req) => {
         try {
             console.log(`Starting stream for camera: ${cameraId}`);
             handlers[cameraId](ws, req); // Bắt đầu luồng camera
+            ws.on('open', () => {
+                console.log('Kết nối WebSocket đã được thiết lập');
+            });
+            
+            ws.on('message', (data) => {
+                console.log('Kết nối thành công');
+            });
+            
+            ws.on('error', (error) => {
+                console.error('Lỗi xảy ra trong kết nối WebSocket:', error);
+            });
+            
+            ws.on('close', () => {
+                console.log('Kết nối WebSocket đã bị đóng');
+            });
         } catch (error) {
             console.error(`Không thể kết nối tới camera ${cameraId}:`, error);
             ws.close();  // Đóng kết nối nếu có lỗi
@@ -190,6 +204,39 @@ app.get('/', (req, res) => {
     res.render('index', { scriptUrl, cameras: Object.keys(cameras) });
 });
 
+//view recording
+app.use('/new_recordings', express.static(path.join(__dirname, 'new_recordings')));
+app.get('/api/recordings',(req,res)=>{
+    const recordingsDir = path.join(__dirname,'new_recordings');
+    const getDirectoryStructure = (dirPath) => {
+        const result = {};
+        const items = fs.readdirSync(dirPath);
+        items.forEach(item=>{
+            const itemPath = path.join(dirPath,item);
+            const stats = fs.statSync(itemPath);
+            if (stats.isDirectory()){
+                result[item] = getDirectoryStructure(itemPath);
+            } else if (item.endsWith('.mp4')){
+                if (!result.files) result.files =[];
+                result.files.push(item);
+            }
+        });
+        return result;
+    };
+    try {
+        const directoryStructure = getDirectoryStructure(recordingsDir);
+        res.json(directoryStructure);
+    } catch (error) {
+        console.error('Error reading directory structure:', error);
+        res.status(500).json({ error: 'Failed to retrieve recordings' });
+    }
+})
+
+app.get('/recordings', (req,res) => {
+    res.render('recordings');
+})
+
 app.listen(8000, () => {
     console.log(`Server is running on port 8000`);
 });
+

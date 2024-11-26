@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
         wsConnections[cameraId] = wsConnection;
     });
 
-    // /*
     document.getElementById('startButton').addEventListener('click', () => {
         cameraOptions.forEach(cameraId => {
             const wsConnection = wsConnections[cameraId];
@@ -51,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-    // */
 
     /*
     document.getElementById('startButton').addEventListener('click', () => {
@@ -86,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     */
     
-
+    /*
     document.getElementById('captureButton').addEventListener('click', () => {
         const canvas = document.getElementById(`canvas-DEV`);
         if (!canvas) {
@@ -243,4 +241,5 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error(`Failed to send image from camera ${cameraId}.`, error);
         });
     }
+    */
 });
