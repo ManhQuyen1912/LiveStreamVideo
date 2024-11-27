@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    
+
     /*
     document.getElementById('startButton').addEventListener('click', () => {
         cameraOptions.forEach(cameraId => {

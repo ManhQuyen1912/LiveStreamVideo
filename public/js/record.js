@@ -5,8 +5,9 @@ async function loadRecordings(){
         const response = await fetch('/api/recordings');
         const data = await response.json();
         container.innerHTML = '';
-        const createTree = (node, parentElement) => {
+        const createTree = (node, parentElement, currentPath = '') => {
             for (const key in node) {
+                console.log(key);
                 if (key === 'files'){
                     const grid = document.createElement('div');
                     grid.className = 'recording-grid';
@@ -15,7 +16,7 @@ async function loadRecordings(){
                         videoWrapper.className = 'recording-item';
 
                         const videoLink = document.createElement('a');
-                        videoLink.href = `/new_recordings/${file}`;
+                        videoLink.href = `new_recordings/${currentPath}/${file}`;
                         videoLink.textContent = file;
                         videoLink.target = '_blank';
                         videoLink.className = 'recording-link';
@@ -24,7 +25,7 @@ async function loadRecordings(){
                         videoElement.controls = true;
                         videoElement.width = 320;
                         videoElement.height = 240;
-                        videoElement.src = `new_recordings/${file}`;
+                        videoElement.src = `new_recordings/${currentPath}/${file}`;
                         videoElement.className = 'recording-video';
 
                         videoWrapper.append(videoElement,videoLink);
@@ -44,7 +45,7 @@ async function loadRecordings(){
                     folder.appendChild(subContainer);
 
                     parentElement.appendChild(folder);
-                    createTree(node[key],subContainer);
+                    createTree(node[key],subContainer, `${currentPath}/${key}`);
                 }
             }
         };

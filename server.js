@@ -6,6 +6,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const fs = require('fs');
 const path = require('path');
 const cron = require('node-cron');
+const { error } = require('console');
 const app = express();
 expressWs(app);
 
@@ -14,10 +15,11 @@ const cameras = {
     // "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
     "VH": `rtsp://admin:YQPEFE@192.168.129.124:554/`,
     "BAKT": `rtsp://admin:PIFUNR@192.168.1.14:5542/`,
-    // "PH1": `rtsp://admin:admin@192.168.110.119:554/`,
+    "PH1": `rtsp://admin:HVVBKO@192.168.1.3:5545`,
     "DEV": `rtsp://admin:YIHXCD@192.168.1.14:5547/`,
     // "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
 };
+const cutVideoCounters = {};
 
 // Tạo các handler proxy cho mỗi camera
 const handlers = {};
@@ -98,12 +100,25 @@ const captureImage = (cameraId) => {
 //     });
 // });
 
-function startRecording(cameraId) {
-    const date = new Date();
-    const dateString = date.toISOString().split('T')[0]; // Get YYYY-MM-DD format
-    const hourString = date.getHours().toString().padStart(2, '0'); // Get HH format
-    const outputPath = path.join(baseRecordingPath, cameraId, dateString, `${hourString}.mp4`);
-
+function startRecording(cameraId, duration = 3600) {
+    // console.log(`Starting recording with:`, { cameraId, duration });
+    const startDate = new Date();
+    const dateString = startDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+    const hourString = startDate.getHours().toString().padStart(2, '0'); // Get HH format
+    console.log(`Hour: ${hourString}`);
+    let fileName;
+    if (duration !== 3600){
+        if (!cutVideoCounters[cameraId]){
+            cutVideoCounters[cameraId] = 1;
+        } else {
+            cutVideoCounters[cameraId]++;
+        }
+        fileName = `Cut_Video_${cutVideoCounters[cameraId]}.mp4`;
+    } else {
+        fileName = `${hourString}.mp4`;
+    }
+    const outputPath = path.join(baseRecordingPath, cameraId, dateString,fileName);
+    // console.log(`Output path: ${outputPath}`);
     if (!fs.existsSync(path.dirname(outputPath))) {
         fs.mkdirSync(path.dirname(outputPath), { recursive: true });
     }
@@ -112,7 +127,7 @@ function startRecording(cameraId) {
         .output(outputPath)
         .outputOptions([
             '-c copy',
-            '-t 900',
+            `-t ${duration}`,
             '-movflags +faststart'
         ])
         .on('start', () => {
@@ -234,6 +249,21 @@ app.get('/api/recordings',(req,res)=>{
 
 app.get('/recordings', (req,res) => {
     res.render('recordings');
+})
+
+app.post('/api/start-recording',(req,res)=>{
+    const {cameraId, duration} = req.body;
+    console.log(cameraId, duration);
+    if (!cameraId || !duration) {
+        return res.status(400).send({message: 'Missing parameters'});
+    }
+    try {
+        startRecording(cameraId,duration);
+        res.send({message: `Recording started for camera ${cameraId}`});
+    } catch (err){
+        console.log(err);
+        res.status(500).send({message:'Failed to start recording', error: err.message})
+    }
 })
 
 app.listen(8000, () => {

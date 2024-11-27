@@ -19,8 +19,17 @@
     <div id="video-container" class="grid-container">
         <% cameras.forEach(camera => { %>
             <div class="grid-item">
-                <canvas id="canvas-<%= camera %>" width="320" height="240"></canvas>
                 <p><%= camera %></p>
+                <canvas id="canvas-<%= camera %>" width="320" height="240"></canvas>
+                <div class="record-control">
+                    <!-- <label for="startTime-<%= camera %>">Start Time:</label>
+                    <input id="startTime-<%= camera %>" type="datetime-local" value="2024-11-27T10:30"/>
+                    <br> -->
+                    <label for="duration-<%= camera %>">Duration(seconds):</label>
+                    <input id="duration-<%= camera %>" type="number" min="1" step="1" placeholder="900">
+                    <br>
+                    <button onclick="startRecordingUI('<%= camera %>')">Start Recording</button>
+                </div>
             </div>
         <% }) %>
     </div>
@@ -29,5 +38,43 @@
     <script src="js/scripts.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script>
+        function startRecordingUI(cameraId){
+            // const startTimeInput = document.getElementById(`startTime-${cameraId}`);
+            const durationInput = document.getElementById(`duration-${cameraId}`);
+
+            // const startTime = startTimeInput.value;
+            const duration = parseInt(durationInput.value) || 900;
+
+            // if(!startTime){
+            //     alert('Please select a datetime!');
+            //     return;
+            // }
+            // const hour = startTime.split("T");
+            // const startTimes = hour[1];
+            // console.log(cameraId);
+            // console.log(startTimes);
+            // console.log(duration);
+            fetch('/api/start-recording/',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({cameraId,duration})
+            })
+            .then(response => response.json())
+            .then(data=>{
+                if (data.success){
+                    alert(`Recording started for camera ${cameraId}`);
+                } else {
+                    alert(`Error: ${data.message}`);
+                }
+            })
+            .catch(error=>{
+                console.error('Error starting recording:', error);
+                alert('An error occurred while starting the recording.');
+            });
+        }
+    </script>
 </body>
 </html>
