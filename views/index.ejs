@@ -42,19 +42,9 @@
         function startRecordingUI(cameraId){
             // const startTimeInput = document.getElementById(`startTime-${cameraId}`);
             const durationInput = document.getElementById(`duration-${cameraId}`);
-
             // const startTime = startTimeInput.value;
             const duration = parseInt(durationInput.value) || 900;
 
-            // if(!startTime){
-            //     alert('Please select a datetime!');
-            //     return;
-            // }
-            // const hour = startTime.split("T");
-            // const startTimes = hour[1];
-            // console.log(cameraId);
-            // console.log(startTimes);
-            // console.log(duration);
             fetch('/api/start-recording/',{
                 method: 'POST',
                 headers: {

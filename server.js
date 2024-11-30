@@ -15,7 +15,7 @@ const cameras = {
     // "SEO": `rtsp://admin:admin@192.168.110.116:554/`,
     "VH": `rtsp://admin:YQPEFE@192.168.129.124:554/`,
     "BAKT": `rtsp://admin:PIFUNR@192.168.1.14:5542/`,
-    "PH1": `rtsp://admin:HVVBKO@192.168.1.3:5545`,
+    // "PH1": `rtsp://admin:HVVBKO@192.168.1.3:5545`,
     "DEV": `rtsp://admin:YIHXCD@192.168.1.14:5547/`,
     // "PH2": `rtsp://admin:deadman300$@192.168.110.116:554/stream1`,
 };
@@ -258,7 +258,8 @@ app.post('/api/start-recording',(req,res)=>{
         return res.status(400).send({message: 'Missing parameters'});
     }
     try {
-        startRecording(cameraId,duration);
+        // startRecording(cameraId,duration);
+        captureImage(cameraId);
         res.send({message: `Recording started for camera ${cameraId}`});
     } catch (err){
         console.log(err);
